@@ -1,0 +1,14 @@
+streamlit>=1.32.0
+Pillow
+googletrans==4.0.0rc1
+SpeechRecognition
+gTTS
+pytesseract
+pyaudio; platform_system != "Windows"
+# For Windows microphone support, install pyaudio via pipwin:
+#   pip install pipwin
+#   pipwin install pyaudio
+# Optional advanced translation:
+# transformers
+# torch
+# install https://github.com/UB-Mannheim/tesseract/wiki
