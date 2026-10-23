@@ -4,7 +4,6 @@ googletrans==4.0.0rc1
 SpeechRecognition
 gTTS
 pytesseract
-pyaudio; platform_system != "Windows"
 # For Windows microphone support, install pyaudio via pipwin:
 #   pip install pipwin
 #   pipwin install pyaudio
