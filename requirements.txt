@@ -1,6 +1,6 @@
 streamlit>=1.32.0
 Pillow
-googletrans==4.0.0rc1
+googletrans==4.0.2
 SpeechRecognition
 gTTS
 pytesseract
