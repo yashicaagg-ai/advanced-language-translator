@@ -96,7 +96,7 @@ with tab1:
             try:
                 audio_bytes = audio_data["bytes"]
                 with sr.AudioFile(io.BytesIO(audio_bytes) as source:
-                    audio = recognizer.source(source)
+                    audio = recognizer.record(source)
                 text = recognizer.recognize_google(audio)
 
                 src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
