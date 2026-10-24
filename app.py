@@ -135,7 +135,7 @@ with tab2:
             )
                 return translated
             try:   
-                translated = asynico.run(translate_text())
+                translated = asyncio.run(translate_text())
                 st.session_state.translated_text = translated.text
                 st.success(f"**Translated:** {translated.text}")
                 speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang],)
