@@ -82,18 +82,20 @@ with tab1:
         st.session_state.target_lang = st.selectbox("Target Language", list(LANGUAGE_NAMES.keys()), index=list(LANGUAGE_NAMES.keys()).index("English"))
 
     if st.button("🎙️ Record and Translate"):
-        recognizer = sr.Recognizer()
-        with sr.Microphone() as source:
-            st.info("Listening... Please speak clearly.")
+        audio_file = st.audio_input("Record Your voice")
+        if audio-file is not None:
+            recognizer = sr.Recognizer()
             try:
-                audio = recognizer.listen(source, timeout=5)
+                import io
+                with sr.AudioFile(io.ByterIO(audio_file.getvalue())) as source:
+                    audio = recognizer.listen(source, timeout=5)
                 text = recognizer.recognize_google(audio)
 
                 src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
                 if src_lang_code == "auto":
                     detected = translator.detect(text)
                     src_lang_code = detected.lang
-                    st.info(f"Detected Language: {LANGUAGE_CODES.get(detected.lang, detected.lang)}")
+                    st.info(f"Detected Language:" f"{LANGUAGE_CODES.get(detected.lang, detected.lang)}")
 
                 translated = translator.translate(
                     text,
@@ -103,6 +105,10 @@ with tab1:
                 st.success(f"**You said:** {text}")
                 st.success(f"**Translated:** {translated.text}")
                 speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang])
+            except sr.UnknownValueError:
+                st.error("Sorry, I could not understant the audio.")
+            except sr.RequestEror as e:
+                st.error(f"Speech recognition error: {e}")
             except Exception as e:
                 st.error(f"Error: {e}")
 
