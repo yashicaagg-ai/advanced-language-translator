@@ -10,7 +10,7 @@ import pytesseract
 from PIL import Image
 import os
 import io
-
+from streamlit_mic_recoder import mic_recoder
 
 # ---------- Configure Tesseract Path (Windows only) ----------
 # If installed in a custom directory, update this path
@@ -82,7 +82,7 @@ with tab1:
         st.session_state.target_lang = st.selectbox("Target Language", list(LANGUAGE_NAMES.keys()), index=list(LANGUAGE_NAMES.keys()).index("English"))
 
     if st.button("🎙️ Record and Translate"):
-        from streamlit_mic_recoder import mic_recoder
+        
         audio_data = mic_recoder(
             start_prompt="🎙️Start Recording",
             stop_prompt="⏹️ Stop Recording",
@@ -94,7 +94,7 @@ with tab1:
         if audio_file is not None:
             recognizer = sr.Recognizer()
             try:
-                import io
+                
                 with sr.AudioFile(io.ByterIO(audio_file.getvalue())) as source:
                     audio = recognizer.listen(source, timeout=5)
                 text = recognizer.recognize_google(audio)
