@@ -132,12 +132,12 @@ with tab2:
                 dest=LANGUAGE_NAMES[st.session_state.target_lang],
             )
             return translated
-            try:  
-                translated = asynico.run(translate_text())
+        try:  
+            translated = asynico.run(translate_text())
             st.session_state.translated_text = translated.text
             st.success(f"**Translated:** {translated.text}")
             speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang],)
-            except Exception as e: st.error(f"Translation failed: {e}")
+        except Exception as e: st.error(f"Translation failed: {e}")
         else:
             st.warning("Please enter some text.")
 
