@@ -3,7 +3,6 @@ Pillow
 googletrans==4.0.2
 SpeechRecognition
 gTTS
-PyAudio
 deep-translator
 pytesseract
 # For Windows microphone support, install pyaudio via pipwin:
