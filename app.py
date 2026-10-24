@@ -2,6 +2,7 @@ import pytesseract
 # Set the path to tesseract.exe
 pytesseract.pytesseract.tesseract_cmd = "C:\\Users\\Piyus\\Downloads\\tesseract-ocr-w64-setup-5.5.0.20241111(2).exe"
 import streamlit as st
+import asyncio
 import speech_recognition as sr
 from googletrans import Translator, LANGUAGES
 from gtts import gTTS
@@ -9,6 +10,7 @@ import pytesseract
 from PIL import Image
 import os
 import io
+
 
 # ---------- Configure Tesseract Path (Windows only) ----------
 # If installed in a custom directory, update this path
@@ -118,7 +120,7 @@ with tab2:
 
     if st.button("Translate Text"):
         if st.session_state.input_text.strip():
-            import async
+            
             async def translate_text() : 
                 src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
                 if src_lang_code == "auto":
