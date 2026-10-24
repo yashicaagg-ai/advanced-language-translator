@@ -82,6 +82,14 @@ with tab1:
         st.session_state.target_lang = st.selectbox("Target Language", list(LANGUAGE_NAMES.keys()), index=list(LANGUAGE_NAMES.keys()).index("English"))
 
     if st.button("🎙️ Record and Translate"):
+        from streamlit_mic_recoder import mic_recoder
+        audio_data = mic_recoder(
+            start_prompt="🎙️Start Recording",
+            stop_prompt="⏹️ Stop Recording",
+            just_once=True,
+            use_container_width=True,
+            key="Speech_recorder"
+        )
         audio_file = st.audio_input("Record Your voice")
         if audio_file is not None:
             recognizer = sr.Recognizer()
