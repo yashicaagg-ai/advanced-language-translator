@@ -126,7 +126,7 @@ with tab2:
                     src_lang_code = detected.lang
                     st.info(f"Detected Language: " f"{LANGUAGE_CODES.get(detected.lang, detected.lang)}")
 
-            translated = await translator.translate(
+                translated = await translator.translate(
                     st.session_state.input_text,
                     src=src_lang_code,
                     dest=LANGUAGE_NAMES[st.session_state.target_lang],
