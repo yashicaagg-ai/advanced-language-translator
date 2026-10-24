@@ -5,6 +5,7 @@ SpeechRecognition
 gTTS
 deep-translator
 pytesseract
+streamlit-mic-recoder
 # For Windows microphone support, install pyaudio via pipwin:
 #   pip install pipwin
 #   pipwin install pyaudio
