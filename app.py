@@ -119,8 +119,8 @@ with tab2:
     if st.button("Translate Text"):
         if st.session_state.input_text.strip():
             import asyncio
-            async def translate_text() :
-            src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
+            async def translate_text() : 
+                src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
             if src_lang_code == "auto":
                 detected = await translator.detect(st.session_state.input_text)
                 src_lang_code = detected.lang
@@ -132,11 +132,12 @@ with tab2:
                 dest=LANGUAGE_NAMES[st.session_state.target_lang],
             )
             return translated
-            try: translated = asynico.run(translate_text())
+            try:  
+                translated = asynico.run(translate_text())
             st.session_state.translated_text = translated.text
             st.success(f"**Translated:** {translated.text}")
             speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang],)
-except Exception as e: st.error(f"Translation failed: {e}")
+            except Exception as e: st.error(f"Translation failed: {e}")
         else:
             st.warning("Please enter some text.")
 
