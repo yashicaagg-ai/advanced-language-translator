@@ -83,7 +83,7 @@ with tab1:
 
     if st.button("🎙️ Record and Translate"):
         audio_file = st.audio_input("Record Your voice")
-        if audio-file is not None:
+        if audio_file is not None:
             recognizer = sr.Recognizer()
             try:
                 import io
