@@ -119,7 +119,7 @@ with tab2:
     if st.button("Translate Text"):
         if st.session_state.input_text.strip():
             import asyncio
-            async def"translate_text" :
+            async def translate_text() :
             src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
             if src_lang_code == "auto":
                 detected = await translator.detect(st.session_state.input_text)
