@@ -303,18 +303,13 @@ with tab3:
                     try:
                         src_lang_code = LANGUAGE_NAMES[source_lang]
                         dest_lang_code = LANGUAGE_NAMES[target_lang]
-
                         if src_lang_code == "auto":
-                            detected = translator.detect(extracted_text)
-
+                            detected = asyncio.run(translator.detect(extracted_text))
                             st.info(
-                                "Detected Language: "
-                                + LANGUAGE_CODES.get(
-                                    detected.lang, detected.lang
-                                )
+                                "Detected Language: " 
+                                + LANGUAGE_CODES.get(detected.lang, detected.lang)
                             )
-
-                            src_lang_code = detected.lang
+                        src_lang_code = detected.lang
 
                         translated = translator.translate(
                             extracted_text,
