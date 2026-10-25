@@ -225,46 +225,126 @@ with tab2:
         st.download_button("📥 Download Translation", st.session_state.translated_text, file_name="translation.txt")
 
 # ---------- Image Translator ----------
+
 with tab3:
     st.subheader("🖼️ Image Translator")
 
-    uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+    uploaded_file = st.file_uploader(
+        "Upload an image",
+        type=["png", "jpg", "jpeg"],
+        key="image_uploader"
+    )
 
+    if uploaded_file is not None:
         try:
+            image = Image.open(uploaded_file).convert("RGB")
+            st.image(
+                image,
+                caption="Uploaded Image",
+                use_container_width=True
+            )
+
+            # Configure Tesseract for Windows and Streamlit Cloud
+            import os
+            import shutil
+            import pytesseract
+
+            if os.name == "nt":
+                windows_tesseract = (
+                    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+                )
+                if os.path.exists(windows_tesseract):
+                    pytesseract.pytesseract.tesseract_cmd = (
+                        windows_tesseract
+                    )
+            else:
+                linux_tesseract = shutil.which("tesseract")
+                if linux_tesseract:
+                    pytesseract.pytesseract.tesseract_cmd = (
+                        linux_tesseract
+                    )
+                else:
+                    st.error(
+                        "Tesseract OCR is not installed on the server. "
+                        "Please add 'tesseract-ocr' to packages.txt "
+                        "in your GitHub repository and redeploy."
+                    )
+                    st.stop()
+
+            # Extract text from image
             extracted_text = pytesseract.image_to_string(image)
             st.session_state.image_text = extracted_text
 
             if extracted_text.strip():
-                st.text_area("Extracted Text", extracted_text)
+                st.text_area(
+                    "Extracted Text",
+                    extracted_text,
+                    key="extracted_image_text"
+                )
 
                 col1, col2 = st.columns(2)
+                language_keys = list(LANGUAGE_NAMES.keys())
+
                 with col1:
-                    st.session_state.source_lang = st.selectbox("Source Language", list(LANGUAGE_NAMES.keys()), index=0, key="img_src")
-                with col2:
-                    st.session_state.target_lang = st.selectbox("Target Language", list(LANGUAGE_NAMES.keys()), index=list(LANGUAGE_NAMES.keys()).index("English"), key="img_tgt")
-
-                if st.button("Translate Image Text"):
-                    src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
-                    if src_lang_code == "auto":
-                        detected = translator.detect(extracted_text)
-                        src_lang_code = detected.lang
-                        st.info(f"Detected Language: {LANGUAGE_CODES.get(detected.lang, detected.lang)}")
-
-                    translated = translator.translate(
-                        extracted_text,
-                        src=src_lang_code,
-                        dest=LANGUAGE_NAMES[st.session_state.target_lang]
+                    source_lang = st.selectbox(
+                        "Source Language",
+                        language_keys,
+                        index=0,
+                        key="img_src"
                     )
-                    st.session_state.image_translation = translated.text
-                    st.success(f"**Translated Text:** {translated.text}")
-                    speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang])
+
+                with col2:
+                    english_index = (
+                        language_keys.index("English")
+                        if "English" in language_keys else 0
+                    )
+                    target_lang = st.selectbox(
+                        "Target Language",
+                        language_keys,
+                        index=english_index,
+                        key="img_tgt"
+                    )
+
+                if st.button("Translate Image Text", key="translate_image"):
+                    try:
+                        src_lang_code = LANGUAGE_NAMES[source_lang]
+                        dest_lang_code = LANGUAGE_NAMES[target_lang]
+
+                        if src_lang_code == "auto":
+                            detected = translator.detect(extracted_text)
+                            src_lang_code = detected.lang
+                            st.info(
+                                "Detected Language: "
+                                + LANGUAGE_CODES.get(
+                                    detected.lang, detected.lang
+                                )
+                            )
+
+                        translated = translator.translate(
+                            extracted_text,
+                            src=src_lang_code,
+                            dest=dest_lang_code
+                        )
+
+                        st.session_state.image_translation = translated.text
+                        st.success(
+                            f"**Translated Text:** {translated.text}"
+                        )
+
+                        speak_text(translated.text, dest_lang_code)
+
+                    except Exception as e:
+                        st.error(f"Translation error: {e}")
+
             else:
-                st.warning("No readable text found in the image.")
+                st.warning(
+                    "No readable text found in the image. "
+                    "Try a clearer image with larger text."
+                )
+
         except Exception as e:
             st.error(f"OCR Error: {e}")
+
 
 # ---------- Reset Button ----------
 st.sidebar.button("🔄 Reset All", on_click=reset_all)
