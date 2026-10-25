@@ -10,6 +10,7 @@ import pytesseract
 from PIL import Image
 import os
 import io
+from pydub import AudioSegment
 from streamlit_mic_recorder import mic_recorder
 
 # ---------- Configure Tesseract Path (Windows only) ----------
@@ -110,69 +111,77 @@ with tab1:
         key="Speech_recorder"
     )
 
-    if audio_data and audio_data.get("bytes"):
 
+if audio_data and audio_data.get("bytes"):
+    try:
+        recognizer = sr.Recognizer()
+        audio_bytes = audio_data["bytes"]
+
+        # Convert browser-recorded audio to WAV
         try:
-            recognizer = sr.Recognizer()
+            audio_segment = AudioSegment.from_file(
+                io.BytesIO(audio_bytes)
+            )
+            wav_buffer = io.BytesIO()
+            audio_segment.export(
+                wav_buffer,
+                format="wav"
+            )
+            wav_buffer.seek(0)
 
-            # Convert recorded audio into text
-            audio_bytes = audio_data["bytes"]
+        except Exception as audio_error:
+            st.error(
+                f"Could not convert recording to WAV: {audio_error}"
+            )
+            st.stop()
 
-            with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
-                audio = recognizer.record(source)
+        # Recognize speech from converted WAV audio
+        with sr.AudioFile(wav_buffer) as source:
+            audio = recognizer.record(source)
 
-            text = recognizer.recognize_google(audio)
+        text = recognizer.recognize_google(audio)
+        st.success(f"**You said:** {text}")
 
-            st.success(f"**You said:** {text}")
+        src_lang_code = LANGUAGE_NAMES[
+            st.session_state.source_lang
+        ]
+        dest_lang_code = LANGUAGE_NAMES[
+            st.session_state.target_lang
+        ]
 
-            # Get selected language codes
-            src_lang_code = LANGUAGE_NAMES[
-                st.session_state.source_lang
-            ]
-            dest_lang_code = LANGUAGE_NAMES[
-                st.session_state.target_lang
-            ]
+        # Detect source language when Auto is selected
+        if src_lang_code == "auto":
+            detected = translator.detect(text)
+            src_lang_code = detected.lang
 
-            # Automatically detect the source language if selected
-            if src_lang_code == "auto":
-                detected = translator.detect(text)
-                src_lang_code = detected.lang
-
-                st.info(
-                    "Detected Language: "
-                    + LANGUAGE_CODES.get(
-                        detected.lang, detected.lang
-                    )
+            st.info(
+                "Detected Language: "
+                + LANGUAGE_CODES.get(
+                    detected.lang, detected.lang
                 )
-
-            # Translate the recognized text
-            translated = translator.translate(
-                text,
-                src=src_lang_code,
-                dest=dest_lang_code
             )
 
-            st.success(f"**Translated:** {translated.text}")
+        # Translate recognized text
+        translated = translator.translate(
+            text,
+            src=src_lang_code,
+            dest=dest_lang_code
+        )
 
-            # Speak the translated text
-            speak_text(
-                translated.text,
-                dest_lang_code
-            )
+        st.success(f"**Translated:** {translated.text}")
 
-        except sr.UnknownValueError:
-            st.error(
-                "Sorry, I could not understand the audio. "
-                "Please record again and speak clearly."
-            )
+        # Speak translated result
+        speak_text(translated.text, dest_lang_code)
 
-        except sr.RequestError as e:
-            st.error(
-                f"Speech recognition service error: {e}"
-            )
+    except sr.UnknownValueError:
+        st.error("Sorry, I could not understand the audio.")
 
-        except Exception as e:
-            st.error(f"Translation or recording error: {e}")
+    except sr.RequestError as e:
+        st.error(f"Speech recognition service error: {e}")
+
+    except Exception as e:
+        st.error(f"Translation or recording error: {e}")
+
 
 
 # ---------- Text Translator ----------
