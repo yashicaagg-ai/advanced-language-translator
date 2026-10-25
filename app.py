@@ -246,9 +246,9 @@ with tab3:
                 use_container_width=True
             )
 
-            # Set the correct Tesseract path
             import os
             import shutil
+            import asyncio
 
             if os.name == "nt":
                 pytesseract.pytesseract.tesseract_cmd = (
@@ -259,9 +259,7 @@ with tab3:
                     shutil.which("tesseract") or "/usr/bin/tesseract"
                 )
 
-            # Extract text from image
             extracted_text = pytesseract.image_to_string(image)
-
             st.session_state.image_text = extracted_text
 
             if extracted_text.strip():
@@ -272,7 +270,6 @@ with tab3:
                 )
 
                 col1, col2 = st.columns(2)
-
                 language_keys = list(LANGUAGE_NAMES.keys())
 
                 with col1:
@@ -288,7 +285,6 @@ with tab3:
                         language_keys.index("English")
                         if "English" in language_keys else 0
                     )
-
                     target_lang = st.selectbox(
                         "Target Language",
                         language_keys,
@@ -296,27 +292,37 @@ with tab3:
                         key="img_tgt"
                     )
 
-                if st.button(
-                    "Translate Image Text",
-                    key="translate_image"
-                ):
+                if st.button("Translate Image Text", key="translate_image"):
                     try:
-                        src_lang_code = LANGUAGE_NAMES[source_lang]
-                        dest_lang_code = LANGUAGE_NAMES[target_lang]
-                        if src_lang_code == "auto":
-                            detected = asyncio.run(translator.detect(extracted_text))
-                            st.info(
-                                "Detected Language: " 
-                                + LANGUAGE_CODES.get(detected.lang, detected.lang)
-                            )
-                        src_lang_code = detected.lang
-                        translated = await translator.translate(
-                            
-                                extracted_text,
-                                src=src_lang_code,
-                                dest=dest_lang_code
-                            
+                        async def translate_image_text():
+                            text_to_translate = extracted_text
+                            src_code = LANGUAGE_NAMES[source_lang]
+                            dest_code = LANGUAGE_NAMES[target_lang]
+
+                            if src_code == "auto":
+                                detected = await translator.detect(text_to_translate)
+                                src_code = detected.lang
+                                detected_name = LANGUAGE_CODES.get(
+                                    src_code, src_code
+                                )
+                                return await translator.translate(
+                                    text_to_translate,
+                                    src=src_code,
+                                    dest=dest_code
+                                ), detected_name
+
+                            return await translator.translate(
+                                text_to_translate,
+                                src=src_code,
+                                dest=dest_code
+                            ), None
+
+                        translated, detected_name = asyncio.run(
+                            translate_image_text()
                         )
+
+                        if detected_name:
+                            st.info(f"Detected Language: {detected_name}")
 
                         st.session_state.image_translation = translated.text
 
@@ -324,7 +330,7 @@ with tab3:
                             f"**Translated Text:** {translated.text}"
                         )
 
-                        speak_text(translated.text, dest_lang_code)
+                        speak_text(translated.text, LANGUAGE_NAMES[target_lang])
 
                     except Exception as e:
                         st.error(f"Translation error: {e}")
@@ -337,6 +343,7 @@ with tab3:
 
         except Exception as e:
             st.error(f"OCR Error: {e}")
+
 
 
 
