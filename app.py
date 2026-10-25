@@ -72,53 +72,108 @@ st.title("🌐 Advanced AI-Powered Language Translator")
 tab1, tab2, tab3 = st.tabs(["🎤 Voice Translator", "⌨️ Text Translator", "🖼️ Image Translator"])
 
 # ---------- Voice Translator ----------
+
 with tab1:
     st.subheader("🎤 Speak and Translate")
 
     col1, col2 = st.columns(2)
+
     with col1:
-        st.session_state.source_lang = st.selectbox("Source Language", list(LANGUAGE_NAMES.keys()), index=0)
-    with col2:
-        st.session_state.target_lang = st.selectbox("Target Language", list(LANGUAGE_NAMES.keys()), index=list(LANGUAGE_NAMES.keys()).index("English"))
-
-    if st.button("🎙️ Record and Translate"):
-        
-        audio_data = mic_recorder(
-            start_prompt="🎙️Start Recording",
-            stop_prompt="⏹️ Stop Recording",
-            just_once=True,
-            use_container_width=True,
-            key="Speech_recorder"
+        st.session_state.source_lang = st.selectbox(
+            "Source Language",
+            list(LANGUAGE_NAMES.keys()),
+            index=0,
+            key="speech_source_lang"
         )
-        audio_file = st.audio_input("Record Your voice")
-        if audio_file is not None:
+
+    with col2:
+        language_keys = list(LANGUAGE_NAMES.keys())
+        english_index = (
+            language_keys.index("English")
+            if "English" in language_keys else 0
+        )
+
+        st.session_state.target_lang = st.selectbox(
+            "Target Language",
+            language_keys,
+            index=english_index,
+            key="speech_target_lang"
+        )
+
+    st.write("Click Start Recording, speak, and then stop recording.")
+
+    audio_data = mic_recorder(
+        start_prompt="🎙️ Start Recording",
+        stop_prompt="⏹️ Stop Recording",
+        just_once=True,
+        use_container_width=True,
+        key="Speech_recorder"
+    )
+
+    if audio_data and audio_data.get("bytes"):
+
+        try:
             recognizer = sr.Recognizer()
-            try:
-                audio_bytes = audio_data["bytes"]
-                with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
-                    audio = recognizer.record(source)
-                text = recognizer.recognize_google(audio)
 
-                src_lang_code = LANGUAGE_NAMES[st.session_state.source_lang]
-                if src_lang_code == "auto":
-                    detected = translator.detect(text)
-                    src_lang_code = detected.lang
-                    st.info(f"Detected Language:" f"{LANGUAGE_CODES.get(detected.lang, detected.lang)}")
+            # Convert recorded audio into text
+            audio_bytes = audio_data["bytes"]
 
-                translated = translator.translate(
-                    text,
-                    src=src_lang_code,
-                    dest=LANGUAGE_NAMES[st.session_state.target_lang]
+            with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
+                audio = recognizer.record(source)
+
+            text = recognizer.recognize_google(audio)
+
+            st.success(f"**You said:** {text}")
+
+            # Get selected language codes
+            src_lang_code = LANGUAGE_NAMES[
+                st.session_state.source_lang
+            ]
+            dest_lang_code = LANGUAGE_NAMES[
+                st.session_state.target_lang
+            ]
+
+            # Automatically detect the source language if selected
+            if src_lang_code == "auto":
+                detected = translator.detect(text)
+                src_lang_code = detected.lang
+
+                st.info(
+                    "Detected Language: "
+                    + LANGUAGE_CODES.get(
+                        detected.lang, detected.lang
+                    )
                 )
-                st.success(f"**You said:** {text}")
-                st.success(f"**Translated:** {translated.text}")
-                speak_text(translated.text, LANGUAGE_NAMES[st.session_state.target_lang])
-            except sr.UnknownValueError:
-                st.error("Sorry, I could not understant the audio.")
-            except sr.RequestEror as e:
-                st.error(f"Speech recognition error: {e}")
-            except Exception as e:
-                st.error(f"Error: {e}")
+
+            # Translate the recognized text
+            translated = translator.translate(
+                text,
+                src=src_lang_code,
+                dest=dest_lang_code
+            )
+
+            st.success(f"**Translated:** {translated.text}")
+
+            # Speak the translated text
+            speak_text(
+                translated.text,
+                dest_lang_code
+            )
+
+        except sr.UnknownValueError:
+            st.error(
+                "Sorry, I could not understand the audio. "
+                "Please record again and speak clearly."
+            )
+
+        except sr.RequestError as e:
+            st.error(
+                f"Speech recognition service error: {e}"
+            )
+
+        except Exception as e:
+            st.error(f"Translation or recording error: {e}")
+
 
 # ---------- Text Translator ----------
 with tab2:
