@@ -310,12 +310,12 @@ with tab3:
                                 + LANGUAGE_CODES.get(detected.lang, detected.lang)
                             )
                         src_lang_code = detected.lang
-                        translated = asyncio.run(
-                            translator.translate(
+                        translated = await translator.translate(
+                            
                                 extracted_text,
                                 src=src_lang_code,
                                 dest=dest_lang_code
-                            )
+                            
                         )
 
                         st.session_state.image_translation = translated.text
