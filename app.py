@@ -95,7 +95,7 @@ with tab1:
             recognizer = sr.Recognizer()
             try:
                 audio_bytes = audio_data["bytes"]
-                with sr.AudioFile(io.BytesIO(audio_bytes) as source:
+                with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
                     audio = recognizer.record(source)
                 text = recognizer.recognize_google(audio)
 
