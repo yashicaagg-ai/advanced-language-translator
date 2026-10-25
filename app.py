@@ -226,6 +226,7 @@ with tab2:
 
 # ---------- Image Translator ----------
 
+
 with tab3:
     st.subheader("🖼️ Image Translator")
 
@@ -238,41 +239,29 @@ with tab3:
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file).convert("RGB")
+
             st.image(
                 image,
                 caption="Uploaded Image",
                 use_container_width=True
             )
 
-            # Configure Tesseract for Windows and Streamlit Cloud
+            # Set the correct Tesseract path
             import os
             import shutil
-            import pytesseract
 
             if os.name == "nt":
-                windows_tesseract = (
+                pytesseract.pytesseract.tesseract_cmd = (
                     r"C:\Program Files\Tesseract-OCR\tesseract.exe"
                 )
-                if os.path.exists(windows_tesseract):
-                    pytesseract.pytesseract.tesseract_cmd = (
-                        windows_tesseract
-                    )
             else:
-                linux_tesseract = shutil.which("tesseract")
-                if linux_tesseract:
-                    pytesseract.pytesseract.tesseract_cmd = (
-                        linux_tesseract
-                    )
-                else:
-                    st.error(
-                        "Tesseract OCR is not installed on the server. "
-                        "Please add 'tesseract-ocr' to packages.txt "
-                        "in your GitHub repository and redeploy."
-                    )
-                    st.stop()
+                pytesseract.pytesseract.tesseract_cmd = (
+                    shutil.which("tesseract") or "/usr/bin/tesseract"
+                )
 
             # Extract text from image
             extracted_text = pytesseract.image_to_string(image)
+
             st.session_state.image_text = extracted_text
 
             if extracted_text.strip():
@@ -283,6 +272,7 @@ with tab3:
                 )
 
                 col1, col2 = st.columns(2)
+
                 language_keys = list(LANGUAGE_NAMES.keys())
 
                 with col1:
@@ -298,6 +288,7 @@ with tab3:
                         language_keys.index("English")
                         if "English" in language_keys else 0
                     )
+
                     target_lang = st.selectbox(
                         "Target Language",
                         language_keys,
@@ -305,20 +296,25 @@ with tab3:
                         key="img_tgt"
                     )
 
-                if st.button("Translate Image Text", key="translate_image"):
+                if st.button(
+                    "Translate Image Text",
+                    key="translate_image"
+                ):
                     try:
                         src_lang_code = LANGUAGE_NAMES[source_lang]
                         dest_lang_code = LANGUAGE_NAMES[target_lang]
 
                         if src_lang_code == "auto":
                             detected = translator.detect(extracted_text)
-                            src_lang_code = detected.lang
+
                             st.info(
                                 "Detected Language: "
                                 + LANGUAGE_CODES.get(
                                     detected.lang, detected.lang
                                 )
                             )
+
+                            src_lang_code = detected.lang
 
                         translated = translator.translate(
                             extracted_text,
@@ -327,6 +323,7 @@ with tab3:
                         )
 
                         st.session_state.image_translation = translated.text
+
                         st.success(
                             f"**Translated Text:** {translated.text}"
                         )
@@ -339,11 +336,12 @@ with tab3:
             else:
                 st.warning(
                     "No readable text found in the image. "
-                    "Try a clearer image with larger text."
+                    "Please upload a clearer image."
                 )
 
         except Exception as e:
             st.error(f"OCR Error: {e}")
+
 
 
 # ---------- Reset Button ----------
