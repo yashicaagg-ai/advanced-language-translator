@@ -74,113 +74,44 @@ tab1, tab2, tab3 = st.tabs(["🎤 Voice Translator", "⌨️ Text Translator", "
 
 # ---------- Voice Translator ----------
 
-with tab1:
-    st.subheader("🎤 Speak and Translate")
 
-    col1, col2 = st.columns(2)
+        # Detect language and translate using one event loop
+        async def process_translation():
+            src_code = LANGUAGE_NAMES[
+                st.session_state.source_lang
+            ]
+            dest_code = LANGUAGE_NAMES[
+                st.session_state.target_lang
+            ]
 
-    with col1:
-        st.session_state.source_lang = st.selectbox(
-            "Source Language",
-            list(LANGUAGE_NAMES.keys()),
-            index=0,
-            key="speech_source_lang"
-        )
+            detected_name = None
 
-    with col2:
-        language_keys = list(LANGUAGE_NAMES.keys())
-        english_index = (
-            language_keys.index("English")
-            if "English" in language_keys else 0
-        )
-
-        st.session_state.target_lang = st.selectbox(
-            "Target Language",
-            language_keys,
-            index=english_index,
-            key="speech_target_lang"
-        )
-
-    st.write("Click Start Recording, speak, and then stop recording.")
-
-    audio_data = mic_recorder(
-        start_prompt="🎙️ Start Recording",
-        stop_prompt="⏹️ Stop Recording",
-        just_once=True,
-        use_container_width=True,
-        key="Speech_recorder"
-    )
-
-
-if audio_data and audio_data.get("bytes"):
-    try:
-        recognizer = sr.Recognizer()
-        audio_bytes = audio_data["bytes"]
-
-        # Convert browser-recorded audio to WAV
-        try:
-            audio_segment = AudioSegment.from_file(
-                io.BytesIO(audio_bytes)
-            )
-            wav_buffer = io.BytesIO()
-            audio_segment.export(
-                wav_buffer,
-                format="wav"
-            )
-            wav_buffer.seek(0)
-
-        except Exception as audio_error:
-            st.error(
-                f"Could not convert recording to WAV: {audio_error}"
-            )
-            st.stop()
-
-        # Recognize speech from converted WAV audio
-        with sr.AudioFile(wav_buffer) as source:
-            audio = recognizer.record(source)
-
-        text = recognizer.recognize_google(audio)
-        st.success(f"**You said:** {text}")
-
-        src_lang_code = LANGUAGE_NAMES[
-            st.session_state.source_lang
-        ]
-        dest_lang_code = LANGUAGE_NAMES[
-            st.session_state.target_lang
-        ]
-
-        # Detect source language when Auto is selected
-        if src_lang_code == "auto":
-            detected = translator.detect(text)
-            src_lang_code = detected.lang
-
-            st.info(
-                "Detected Language: "
-                + LANGUAGE_CODES.get(
-                    detected.lang, detected.lang
+            if src_code == "auto":
+                detected = await translator.detect(text)
+                src_code = detected.lang
+                detected_name = LANGUAGE_CODES.get(
+                    src_code, src_code
                 )
+
+            translated = await translator.translate(
+                text,
+                src=src_code,
+                dest=dest_code
             )
 
-        # Translate recognized text
-        translated = translator.translate(
-            text,
-            src=src_lang_code,
-            dest=dest_lang_code
+            return translated, detected_name, dest_code
+
+        translated, detected_name, dest_lang_code = asyncio.run(
+            process_translation()
         )
+
+        if detected_name:
+            st.info(f"Detected Language: {detected_name}")
 
         st.success(f"**Translated:** {translated.text}")
 
-        # Speak translated result
         speak_text(translated.text, dest_lang_code)
 
-    except sr.UnknownValueError:
-        st.error("Sorry, I could not understand the audio.")
-
-    except sr.RequestError as e:
-        st.error(f"Speech recognition service error: {e}")
-
-    except Exception as e:
-        st.error(f"Translation or recording error: {e}")
 
 
 
